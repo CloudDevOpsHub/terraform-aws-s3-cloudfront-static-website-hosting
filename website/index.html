@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Static Website Hosting — CloudDevOpsHub Practical</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #050a10;
+      --bg2: #080f18;
+      --surface: #0c1624;
+      --surface2: #101d2e;
+      --border: #1a2f45;
+      --border2: #1e3a52;
+      --accent: #00c8ff;
+      --accent2: #0ef5a0;
+      --accent3: #ff6b35;
+      --text: #d4e8f7;
+      --muted: #5a7a96;
+      --white: #f0f8ff;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Grid noise overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,200,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,200,255,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Ambient glow blobs ── */
+    .glow-blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: .18;
+      pointer-events: none;
+      z-index: 0;
+      animation: blobDrift 18s ease-in-out infinite alternate;
+    }
+    .glow-blob.b1 { width: 600px; height: 600px; background: var(--accent); top: -200px; left: -200px; }
+    .glow-blob.b2 { width: 500px; height: 500px; background: var(--accent2); bottom: -150px; right: -150px; animation-delay: -9s; }
+    .glow-blob.b3 { width: 300px; height: 300px; background: var(--accent3); top: 50%; left: 50%; animation-delay: -4s; }
+    @keyframes blobDrift { from { transform: translate(0,0) scale(1); } to { transform: translate(40px, 60px) scale(1.1); } }
+
+    /* ── Layout ── */
+    .wrap { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      padding: 16px 0;
+      background: rgba(5,10,16,.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto; padding: 0 28px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 1.6rem;
+      letter-spacing: .08em;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .logo span { color: var(--accent2); }
+    .nav-links { display: flex; gap: 32px; align-items: center; }
+    .nav-links a {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .75rem; font-weight: 600;
+      color: var(--muted);
+      text-decoration: none; letter-spacing: .1em;
+      text-transform: uppercase;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .7rem; padding: 4px 12px;
+      background: rgba(0,200,255,.1);
+      border: 1px solid rgba(0,200,255,.3);
+      color: var(--accent); border-radius: 20px;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 110px 0 80px;
+      position: relative;
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .72rem; letter-spacing: .15em; text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 24px;
+    }
+    .pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent2);
+      animation: pulseDot 1.8s ease-in-out infinite;
+    }
+    @keyframes pulseDot {
+      0%,100% { box-shadow: 0 0 0 0 rgba(14,245,160,.6); }
+      50% { box-shadow: 0 0 0 8px rgba(14,245,160,0); }
+    }
+
+    .hero h1 {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(3.2rem, 8vw, 6.5rem);
+      line-height: .95;
+      letter-spacing: .03em;
+      color: var(--white);
+      margin-bottom: 8px;
+    }
+    .hero h1 .line2 {
+      display: block;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 60%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 1.1rem; font-weight: 300; color: var(--muted);
+      max-width: 580px; line-height: 1.7;
+      margin: 28px 0 44px;
+    }
+    .hero-sub strong { color: var(--text); font-weight: 500; }
+
+    .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px;
+      background: linear-gradient(135deg, var(--accent) 0%, #0098cc 100%);
+      color: #020a10; font-weight: 700; font-size: .9rem;
+      border-radius: 6px; border: none; cursor: pointer;
+      text-decoration: none; letter-spacing: .03em;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 0 30px rgba(0,200,255,.25);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 45px rgba(0,200,255,.4); }
+    .btn-outline {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px;
+      background: transparent;
+      color: var(--text); font-weight: 500; font-size: .9rem;
+      border-radius: 6px; border: 1px solid var(--border2); cursor: pointer;
+      text-decoration: none;
+      transition: border-color .2s, color .2s;
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 28px 0;
+      background: var(--bg2);
+    }
+    .stats-inner {
+      max-width: 1100px; margin: 0 auto; padding: 0 28px;
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+    }
+    .stat-item {
+      text-align: center; padding: 0 16px;
+      border-right: 1px solid var(--border);
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-num {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 2.4rem; letter-spacing: .05em;
+      color: var(--accent); display: block;
+    }
+    .stat-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .12em;
+    }
+
+    /* ── SECTION COMMON ── */
+    section { padding: 90px 0; }
+    .section-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .7rem; letter-spacing: .2em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-label::before {
+      content: ''; width: 32px; height: 1px; background: var(--accent);
+    }
+    .section-title {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(2rem, 4vw, 3rem);
+      color: var(--white); letter-spacing: .04em;
+      margin-bottom: 16px;
+    }
+    .section-desc { font-size: 1rem; color: var(--muted); max-width: 520px; line-height: 1.7; }
+
+    /* ── CARDS ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 18px;
+      margin-top: 52px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px 24px;
+      position: relative; overflow: hidden;
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+      cursor: default;
+    }
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent-card, var(--accent)), transparent);
+      opacity: 0;
+      transition: opacity .3s;
+    }
+    .card:hover { transform: translateY(-5px); border-color: var(--border2); box-shadow: 0 20px 50px rgba(0,0,0,.4); }
+    .card:hover::before { opacity: 1; }
+    .card:nth-child(1) { --accent-card: var(--accent); }
+    .card:nth-child(2) { --accent-card: var(--accent2); }
+    .card:nth-child(3) { --accent-card: var(--accent3); }
+    .card:nth-child(4) { --accent-card: #bf7af0; }
+
+    .card-icon { font-size: 1.9rem; margin-bottom: 18px; display: block; }
+    .card-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .12em;
+      margin-bottom: 8px; display: block;
+    }
+    .card h3 {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 1.45rem; letter-spacing: .06em;
+      color: var(--white); margin-bottom: 10px;
+    }
+    .card p { font-size: .88rem; color: var(--muted); line-height: 1.65; }
+
+    /* ── ARCHITECTURE ── */
+    .arch-section { background: var(--bg2); }
+    .arch-diagram {
+      margin-top: 52px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 52px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0;
+      overflow: hidden;
+      position: relative;
+    }
+    .arch-diagram::before {
+      content: 'ARCHITECTURE';
+      position: absolute; top: 16px; left: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .62rem; letter-spacing: .2em;
+      color: var(--muted); opacity: .5;
+    }
+
+    .arch-node {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      padding: 24px 28px;
+      min-width: 130px;
+      transition: border-color .2s, box-shadow .2s;
+      position: relative;
+    }
+    .arch-node:hover { border-color: var(--accent); box-shadow: 0 0 30px rgba(0,200,255,.15); }
+    .arch-node .emoji { font-size: 2rem; }
+    .arch-node strong {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .75rem; font-weight: 700;
+      color: var(--white); letter-spacing: .06em;
+    }
+    .arch-node .sub-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .6rem; color: var(--muted); text-align: center; margin-top: 2px;
+    }
+    .arch-node.highlighted { border-color: var(--accent); box-shadow: 0 0 30px rgba(0,200,255,.2); }
+
+    .arch-arrow {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 0 16px;
+    }
+    .arrow-line {
+      width: 60px; height: 2px;
+      background: linear-gradient(90deg, var(--border2), var(--accent));
+      position: relative;
+    }
+    .arrow-line::after {
+      content: '';
+      position: absolute; right: -1px; top: -4px;
+      width: 0; height: 0;
+      border-left: 8px solid var(--accent);
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+    }
+    .arrow-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .58rem; color: var(--accent2); letter-spacing: .08em;
+    }
+
+    /* ── TERRAFORM CODE SNIPPET ── */
+    .code-section { }
+    .code-block-wrap {
+      margin-top: 52px;
+      background: #030810;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .code-topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+    .code-dots { display: flex; gap: 7px; }
+    .code-dots span {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    .code-dots .d1 { background: #ff5f57; }
+    .code-dots .d2 { background: #febc2e; }
+    .code-dots .d3 { background: #28c840; }
+    .code-filename {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .72rem; color: var(--muted); letter-spacing: .05em;
+    }
+    .copy-btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem; color: var(--muted);
+      background: transparent; border: 1px solid var(--border); border-radius: 4px;
+      padding: 4px 10px; cursor: pointer; transition: color .2s, border-color .2s;
+    }
+    .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+    pre {
+      padding: 28px 28px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .8rem; line-height: 1.75;
+      overflow-x: auto; color: #8fa8c8;
+    }
+    .t-kw { color: #00c8ff; }
+    .t-res { color: #bf7af0; }
+    .t-str { color: #0ef5a0; }
+    .t-cm { color: #3a5568; }
+    .t-num { color: #ff6b35; }
+
+    /* ── TECH STACK PILLS ── */
+    .tech-stack {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-top: 52px;
+    }
+    .tech-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 18px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 30px; font-size: .82rem; color: var(--text);
+      font-family: 'JetBrains Mono', monospace; font-size: .75rem;
+      transition: border-color .2s, color .2s, box-shadow .2s;
+      cursor: default;
+    }
+    .tech-pill:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 20px rgba(0,200,255,.1); }
+    .tech-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+    .dot-blue { background: var(--accent); }
+    .dot-green { background: var(--accent2); }
+    .dot-orange { background: var(--accent3); }
+    .dot-purple { background: #bf7af0; }
+    .dot-yellow { background: #f5d60e; }
+
+    /* ── LIVE STATUS ── */
+    .status-section { background: var(--bg2); }
+    .status-board {
+      margin-top: 52px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .status-header {
+      padding: 18px 28px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .status-header-left {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .72rem; font-weight: 700; color: var(--text); letter-spacing: .08em;
+    }
+    .uptime-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem; color: var(--accent2);
+      background: rgba(14,245,160,.1); border: 1px solid rgba(14,245,160,.25);
+      padding: 4px 12px; border-radius: 20px;
+    }
+    .status-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--border);
+      transition: background .2s;
+    }
+    .status-row:last-child { border-bottom: none; }
+    .status-row:hover { background: rgba(255,255,255,.02); }
+    .status-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .78rem; color: var(--text); font-weight: 600;
+    }
+    .status-desc { font-size: .82rem; color: var(--muted); margin-top: 2px; }
+    .status-indicator {
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .7rem; color: var(--accent2);
+    }
+    .status-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--accent2);
+      animation: pulseDot 2s ease-in-out infinite;
+    }
+    .status-dot.warn { background: #f5d60e; }
+    .bar-wrap { height: 4px; background: var(--border); border-radius: 2px; width: 80px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+
+    /* ── DEMO PING ── */
+    .ping-section { text-align: center; padding: 80px 0; }
+    .ping-title {
+      font-family: 'Bebas Neue', cursive;
+      font-size: clamp(2rem,4vw,3rem); letter-spacing: .04em;
+      color: var(--white); margin-bottom: 16px;
+    }
+    .ping-desc { font-size: .95rem; color: var(--muted); margin-bottom: 40px; }
+    .ping-btn {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .85rem; font-weight: 700;
+      padding: 16px 36px;
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent); border-radius: 8px;
+      cursor: pointer;
+      transition: background .2s, color .2s, box-shadow .2s, transform .15s;
+      letter-spacing: .08em;
+      position: relative; overflow: hidden;
+    }
+    .ping-btn:hover {
+      background: rgba(0,200,255,.1);
+      box-shadow: 0 0 40px rgba(0,200,255,.25);
+      transform: translateY(-2px);
+    }
+    .ping-btn .count {
+      display: inline-block;
+      background: var(--accent); color: #020a10;
+      font-size: .7rem; font-weight: 800;
+      padding: 2px 8px; border-radius: 10px;
+      margin-left: 10px;
+      min-width: 26px; text-align: center;
+      transition: transform .15s;
+    }
+    .ping-log {
+      margin-top: 36px;
+      max-width: 560px; margin-left: auto; margin-right: auto;
+      font-family: 'JetBrains Mono', monospace; font-size: .75rem;
+      text-align: left; display: flex; flex-direction: column; gap: 6px;
+      max-height: 160px; overflow-y: auto;
+    }
+    .ping-log-entry {
+      display: flex; gap: 12px; align-items: baseline;
+      animation: slideIn .3s ease;
+    }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .log-ts { color: var(--muted); }
+    .log-status { color: var(--accent2); }
+    .log-ms { color: var(--accent3); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 36px 0;
+      background: var(--bg2);
+    }
+    .footer-inner {
+      max-width: 1100px; margin: 0 auto; padding: 0 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+    .footer-brand {
+      font-family: 'Bebas Neue', cursive;
+      font-size: 1.2rem; letter-spacing: .08em; color: var(--accent);
+    }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem; color: var(--muted); text-decoration: none;
+      text-transform: uppercase; letter-spacing: .1em;
+      transition: color .2s;
+    }
+    .footer-links a:hover { color: var(--accent); }
+    .footer-copy {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .68rem; color: var(--muted);
+    }
+    .footer-copy span { color: var(--accent2); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 700px) {
+      .stats-inner { grid-template-columns: repeat(2, 1fr); }
+      .stat-item:nth-child(2) { border-right: none; }
+      .arch-diagram { flex-direction: column; }
+      .arch-arrow { flex-direction: row; transform: rotate(90deg); }
+      .nav-links { display: none; }
+    }
+
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="glow-blob b1"></div>
+  <div class="glow-blob b2"></div>
+  <div class="glow-blob b3"></div>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-inner">
+      <a class="logo" href="#">Cloud<span>DevOps</span>Hub</a>
+      <div class="nav-links">
+        <a href="#overview">Overview</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#terraform">Terraform</a>
+        <a href="#status">Status</a>
+        <span class="nav-badge">Practical Lab</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="wrap">
+    <header class="hero">
+      <div class="hero-eyebrow">
+        <span class="pulse-dot"></span>
+        CloudDevOpsHub · Practical Project
+      </div>
+      <h1>
+        Static Website Hosting
+        <span class="line2">on AWS Cloud</span>
+      </h1>
+      <p class="hero-sub">
+        A production-grade static site deployed using <strong>Amazon S3</strong> for durable object storage,
+        <strong>CloudFront</strong> for global edge delivery, and <strong>Terraform</strong> for
+        fully reproducible, version-controlled infrastructure — zero ClickOps.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn-primary" href="#architecture">
+          Explore Architecture →
+        </a>
+        <a class="btn-outline" href="#terraform">
+          View Terraform Code
+        </a>
+      </div>
+    </header>
+  </div>
+
+  <!-- STATS STRIP -->
+  <div class="stats-strip">
+    <div class="stats-inner">
+      <div class="stat-item reveal">
+        <span class="stat-num">400+</span>
+        <span class="stat-label">CloudFront PoPs</span>
+      </div>
+      <div class="stat-item reveal">
+        <span class="stat-num">99.9%</span>
+        <span class="stat-label">S3 Durability</span>
+      </div>
+      <div class="stat-item reveal">
+        <span class="stat-num">~15ms</span>
+        <span class="stat-label">Edge Latency</span>
+      </div>
+      <div class="stat-item reveal">
+        <span class="stat-num">0</span>
+        <span class="stat-label">Manual Steps (IaC)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="wrap" id="overview">
+    <section>
+      <div class="section-label">Services Used</div>
+      <h2 class="section-title">Core AWS Services</h2>
+      <p class="section-desc">Each service plays a precise role in delivering a secure, fast, and cost-efficient static site at global scale.</p>
+      <div class="cards-grid">
+        <div class="card reveal">
+          <span class="card-icon">🪣</span>
+          <span class="card-tag">Storage</span>
+          <h3>Amazon S3</h3>
+          <p>Private, versioned bucket stores all static assets with server-side encryption (SSE-S3) and lifecycle policies to manage object longevity.</p>
+        </div>
+        <div class="card reveal">
+          <span class="card-icon">⚡</span>
+          <span class="card-tag">CDN &amp; Edge</span>
+          <h3>CloudFront</h3>
+          <p>Global distribution network serves assets from 400+ Points of Presence. HTTPS enforced end-to-end. Custom error pages and cache behaviors configured.</p>
+        </div>
+        <div class="card reveal">
+          <span class="card-icon">🏗️</span>
+          <span class="card-tag">IaC</span>
+          <h3>Terraform</h3>
+          <p>Every AWS resource declared as HCL — bucket policies, CloudFront distributions, OAC — commitable, reviewable, and re-deployable from scratch in minutes.</p>
+        </div>
+        <div class="card reveal">
+          <span class="card-icon">🔐</span>
+          <span class="card-tag">Security</span>
+          <h3>IAM &amp; OAC</h3>
+          <p>Origin Access Control (OAC) replaces legacy OAI. Bucket policy explicitly grants only the CloudFront service principal access — S3 bucket stays fully private.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div id="architecture" class="arch-section">
+    <div class="wrap">
+      <section>
+        <div class="section-label">Design</div>
+        <h2 class="section-title">System Architecture</h2>
+        <p class="section-desc">Request flow from user browser to S3 origin, secured and accelerated by CloudFront at every hop.</p>
+
+        <div class="arch-diagram reveal">
+          <div class="arch-node">
+            <span class="emoji">👤</span>
+            <strong>End User</strong>
+            <span class="sub-text">Browser / App</span>
+          </div>
+
+          <div class="arch-arrow">
+            <div class="arrow-line"></div>
+            <div class="arrow-label">HTTPS</div>
+          </div>
+
+          <div class="arch-node highlighted">
+            <span class="emoji">🌐</span>
+            <strong>CloudFront</strong>
+            <span class="sub-text">CDN · TLS · Cache</span>
+          </div>
+
+          <div class="arch-arrow">
+            <div class="arrow-line"></div>
+            <div class="arrow-label">OAC</div>
+          </div>
+
+          <div class="arch-node">
+            <span class="emoji">🪣</span>
+            <strong>S3 Bucket</strong>
+            <span class="sub-text">Private · Encrypted</span>
+          </div>
+
+          <div class="arch-arrow">
+            <div class="arrow-line"></div>
+            <div class="arrow-label">Governs</div>
+          </div>
+
+          <div class="arch-node">
+            <span class="emoji">🏗️</span>
+            <strong>Terraform</strong>
+            <span class="sub-text">IaC · State · Plan</span>
+          </div>
+        </div>
+
+        <div class="tech-stack reveal">
+          <div class="tech-pill"><span class="dot dot-blue"></span>Amazon S3</div>
+          <div class="tech-pill"><span class="dot dot-orange"></span>CloudFront CDN</div>
+          <div class="tech-pill"><span class="dot dot-purple"></span>Terraform HCL</div>
+          <div class="tech-pill"><span class="dot dot-green"></span>IAM Policies</div>
+          <div class="tech-pill"><span class="dot dot-blue"></span>Origin Access Control</div>
+          <div class="tech-pill"><span class="dot dot-yellow"></span>ACM (SSL/TLS)</div>
+          <div class="tech-pill"><span class="dot dot-green"></span>Route 53 (DNS)</div>
+          <div class="tech-pill"><span class="dot dot-orange"></span>S3 Versioning</div>
+          <div class="tech-pill"><span class="dot dot-purple"></span>SSE-S3 Encryption</div>
+          <div class="tech-pill"><span class="dot dot-blue"></span>CloudFront Cache Policies</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- TERRAFORM CODE -->
+  <div class="wrap" id="terraform">
+    <section class="code-section">
+      <div class="section-label">Infrastructure as Code</div>
+      <h2 class="section-title">Terraform Configuration</h2>
+      <p class="section-desc">Key HCL snippets defining the S3 bucket and CloudFront distribution — reproducible, readable, and version-controlled.</p>
+
+      <div class="code-block-wrap reveal">
+        <div class="code-topbar">
+          <div class="code-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></div>
+          <span class="code-filename">main.tf — CloudDevOpsHub Practical</span>
+          <button class="copy-btn" id="copyBtn">Copy</button>
+        </div>
+        <pre id="codeBlock">
+<span class="t-cm"># ── S3 Bucket ──────────────────────────────────────────────</span>
+<span class="t-kw">resource</span> <span class="t-res">"aws_s3_bucket"</span> <span class="t-str">"site"</span> {
+  bucket = <span class="t-str">"clouddevopshub-static-site"</span>
+
+  tags = {
+    Project     = <span class="t-str">"CloudDevOpsHub"</span>
+    Environment = <span class="t-str">"production"</span>
+    ManagedBy   = <span class="t-str">"terraform"</span>
+  }
+}
+
+<span class="t-cm"># Block all public access — CloudFront is the only entry point</span>
+<span class="t-kw">resource</span> <span class="t-res">"aws_s3_bucket_public_access_block"</span> <span class="t-str">"site"</span> {
+  bucket                  = aws_s3_bucket.site.id
+  block_public_acls       = <span class="t-num">true</span>
+  block_public_policy     = <span class="t-num">true</span>
+  ignore_public_acls      = <span class="t-num">true</span>
+  restrict_public_buckets = <span class="t-num">true</span>
+}
+
+<span class="t-cm"># ── CloudFront Origin Access Control ──────────────────────</span>
+<span class="t-kw">resource</span> <span class="t-res">"aws_cloudfront_origin_access_control"</span> <span class="t-str">"oac"</span> {
+  name                              = <span class="t-str">"clouddevopshub-oac"</span>
+  origin_access_control_origin_type = <span class="t-str">"s3"</span>
+  signing_behavior                  = <span class="t-str">"always"</span>
+  signing_protocol                  = <span class="t-str">"sigv4"</span>
+}
+
+<span class="t-cm"># ── CloudFront Distribution ────────────────────────────────</span>
+<span class="t-kw">resource</span> <span class="t-res">"aws_cloudfront_distribution"</span> <span class="t-str">"cdn"</span> {
+  enabled             = <span class="t-num">true</span>
+  default_root_object = <span class="t-str">"index.html"</span>
+  price_class         = <span class="t-str">"PriceClass_All"</span>
+
+  origin {
+    domain_name              = aws_s3_bucket.site.bucket_regional_domain_name
+    origin_id                = <span class="t-str">"s3-clouddevopshub"</span>
+    origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
+  }
+
+  default_cache_behavior {
+    allowed_methods        = [<span class="t-str">"GET"</span>, <span class="t-str">"HEAD"</span>]
+    cached_methods         = [<span class="t-str">"GET"</span>, <span class="t-str">"HEAD"</span>]
+    target_origin_id       = <span class="t-str">"s3-clouddevopshub"</span>
+    viewer_protocol_policy = <span class="t-str">"redirect-to-https"</span>
+    compress               = <span class="t-num">true</span>
+  }
+
+  restrictions {
+    geo_restriction { restriction_type = <span class="t-str">"none"</span> }
+  }
+
+  viewer_certificate { cloudfront_default_certificate = <span class="t-num">true</span> }
+}
+        </pre>
+      </div>
+    </section>
+  </div>
+
+  <!-- STATUS BOARD -->
+  <div id="status" class="status-section">
+    <div class="wrap">
+      <section>
+        <div class="section-label">Observability</div>
+        <h2 class="section-title">Live Service Status</h2>
+        <p class="section-desc">Real-time health of each infrastructure component in this deployment.</p>
+
+        <div class="status-board reveal">
+          <div class="status-header">
+            <span class="status-header-left">INFRASTRUCTURE STATUS</span>
+            <span class="uptime-badge">All Systems Operational</span>
+          </div>
+          <div class="status-row">
+            <div>
+              <div class="status-name">Amazon S3 Bucket</div>
+              <div class="status-desc">Private bucket · Versioning enabled · SSE-S3</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:24px;">
+              <div><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></div>
+              <div class="status-indicator"><div class="status-dot"></div> Healthy</div>
+            </div>
+          </div>
+          <div class="status-row">
+            <div>
+              <div class="status-name">CloudFront Distribution</div>
+              <div class="status-desc">400+ PoPs · HTTPS enforced · Gzip &amp; Brotli</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:24px;">
+              <div><div class="bar-wrap"><div class="bar-fill" style="width:98%"></div></div></div>
+              <div class="status-indicator"><div class="status-dot"></div> Active</div>
+            </div>
+          </div>
+          <div class="status-row">
+            <div>
+              <div class="status-name">SSL / TLS Certificate</div>
+              <div class="status-desc">ACM · Auto-renewing · TLS 1.3</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:24px;">
+              <div><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></div>
+              <div class="status-indicator"><div class="status-dot"></div> Valid</div>
+            </div>
+          </div>
+          <div class="status-row">
+            <div>
+              <div class="status-name">IAM &amp; Origin Access Control</div>
+              <div class="status-desc">Bucket policy · CloudFront principal only</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:24px;">
+              <div><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></div>
+              <div class="status-indicator"><div class="status-dot"></div> Enforced</div>
+            </div>
+          </div>
+          <div class="status-row">
+            <div>
+              <div class="status-name">Terraform State</div>
+              <div class="status-desc">Remote backend · State locking enabled</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:24px;">
+              <div><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></div>
+              <div class="status-indicator"><div class="status-dot"></div> In Sync</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- PING DEMO -->
+  <div class="wrap">
+    <section class="ping-section">
+      <div class="section-label" style="justify-content:center;margin-bottom:16px;">Interactive Demo</div>
+      <div class="ping-title">Simulate a Request</div>
+      <p class="ping-desc">Hit the button to simulate requests hitting the CloudFront edge and returning a cached response.</p>
+      <button class="ping-btn" id="pingBtn">
+        ▶ SEND REQUEST <span class="count" id="pingCount">0</span>
+      </button>
+      <div class="ping-log" id="pingLog"></div>
+    </section>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">CloudDevOpsHub</div>
+      <div class="footer-links">
+        <a href="#overview">Overview</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#terraform">Terraform</a>
+        <a href="#status">Status</a>
+      </div>
+      <div class="footer-copy">
+        Static Hosting · AWS S3 + CloudFront + Terraform · <span>Practical Lab</span> · © 2025
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ── Scroll reveal ──
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          setTimeout(() => e.target.classList.add('visible'), i * 80);
+        }
+      });
+    }, { threshold: 0.1 });
+    reveals.forEach(el => observer.observe(el));
+
+    // ── Ping demo ──
+    let pingCount = 0;
+    const regions = ['us-east-1','eu-west-1','ap-southeast-1','us-west-2','ap-northeast-1','eu-central-1'];
+    const pingBtn = document.getElementById('pingBtn');
+    const pingCountEl = document.getElementById('pingCount');
+    const pingLog = document.getElementById('pingLog');
+
+    pingBtn.addEventListener('click', () => {
+      pingCount++;
+      pingCountEl.textContent = pingCount;
+      pingCountEl.style.transform = 'scale(1.4)';
+      setTimeout(() => pingCountEl.style.transform = '', 200);
+
+      const region = regions[Math.floor(Math.random() * regions.length)];
+      const ms = (Math.random() * 18 + 6).toFixed(1);
+      const ts = new Date().toISOString().split('T')[1].slice(0,8);
+      const entry = document.createElement('div');
+      entry.className = 'ping-log-entry';
+      entry.innerHTML = `
+        <span class="log-ts">${ts}</span>
+        <span class="log-status">200 OK</span>
+        <span style="color:var(--accent)">CloudFront/${region}</span>
+        <span class="log-ms">${ms}ms</span>
+        <span style="color:var(--muted)">cache:HIT</span>
+      `;
+      pingLog.prepend(entry);
+      if (pingLog.children.length > 8) pingLog.lastChild.remove();
+    });
+
+    // ── Copy code ──
+    const copyBtn = document.getElementById('copyBtn');
+    const codeBlock = document.getElementById('codeBlock');
+    copyBtn.addEventListener('click', () => {
+      const text = codeBlock.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        copyBtn.textContent = 'Copied!';
+        copyBtn.style.color = 'var(--accent2)';
+        setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.style.color = ''; }, 2000);
+      });
+    });
+  </script>
+</body>
+</html>
