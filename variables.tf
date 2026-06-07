@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "bucket_prefix" {
   description = "The prefix for the S3 bucket name."
   type        = string
-  default     = "CloudDevOpsHub-bucket"
+  default     = "clouddevopshub-bucket"
 }
 
 variable "website_source_dir" {
